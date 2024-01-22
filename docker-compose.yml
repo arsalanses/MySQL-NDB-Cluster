@@ -1,0 +1,53 @@
+services:
+  management1:
+    image: quay.io/arsalanse/community-cluster:8.0
+    command: ndb_mgmd
+    networks:
+      cluster:
+        ipv4_address: 192.168.0.2
+    # ports:
+    #   - "1186:1186"
+    # volumes:
+    #   - ./my.cnf:/etc/my.cnf
+    #   - ./mysql-cluster.cnf:/etc/mysql-cluster.cnf
+
+  ndb1:
+    image: quay.io/arsalanse/community-cluster:8.0
+    command: ndbd
+    networks:
+      cluster:
+        ipv4_address: 192.168.0.3
+    depends_on:
+      - management1
+
+  ndb2:
+    image: quay.io/arsalanse/community-cluster:8.0
+    command: ndbd
+    networks:
+      cluster:
+        ipv4_address: 192.168.0.4
+    depends_on:
+      - management1
+
+  mysql1:
+    image: quay.io/arsalanse/community-cluster:8.0
+    command: mysqld
+    networks:
+      cluster:
+        ipv4_address: 192.168.0.10
+    environment:
+      - MYSQL_RANDOM_ROOT_PASSWORD=true
+      - MYSQL_DATABASE=my_database
+    depends_on:
+      - ndb1
+      - ndb2
+
+networks:
+  cluster:
+    ipam:
+      config:
+        - subnet: "192.168.0.0/24"
+
+# to monitor the cluster
+# docker run --rm -it --net=mysql-cluster_cluster quay.io/arsalanse/community-cluster:8.0 ndb_mgm
+# SHOW
